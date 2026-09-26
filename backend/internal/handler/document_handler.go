@@ -37,7 +37,7 @@ func (h *DocumentHandler) Create(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam+": "+err.Error()))
 		return
 	}
-	d, err := h.svc.Create(uint(appID), req.DocType, req.Title, req.Content)
+	d, err := h.svc.Create(uint(appID), middleware.GetUserID(c), middleware.GetUserRole(c), req.DocType, req.Title, req.Content)
 	if err != nil {
 		c.Error(err)
 		return
@@ -52,7 +52,7 @@ func (h *DocumentHandler) ListByApplication(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, "invalid application id"))
 		return
 	}
-	items, err := h.svc.ListByApplication(uint(appID))
+	items, err := h.svc.ListByApplication(uint(appID), middleware.GetUserID(c), middleware.GetUserRole(c))
 	if err != nil {
 		c.Error(err)
 		return
@@ -67,7 +67,7 @@ func (h *DocumentHandler) Get(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, "invalid document id"))
 		return
 	}
-	d, err := h.svc.Get(uint(id))
+	d, err := h.svc.Get(uint(id), middleware.GetUserID(c), middleware.GetUserRole(c))
 	if err != nil {
 		c.Error(err)
 		return
@@ -87,7 +87,7 @@ func (h *DocumentHandler) Save(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam))
 		return
 	}
-	d, err := h.svc.Save(uint(id), req.Content, req.ChangeSummary)
+	d, err := h.svc.Save(uint(id), middleware.GetUserID(c), middleware.GetUserRole(c), req.Content, req.ChangeSummary)
 	if err != nil {
 		c.Error(err)
 		return
@@ -102,7 +102,7 @@ func (h *DocumentHandler) ListVersions(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, "invalid document id"))
 		return
 	}
-	items, err := h.svc.ListVersions(uint(id))
+	items, err := h.svc.ListVersions(uint(id), middleware.GetUserID(c), middleware.GetUserRole(c))
 	if err != nil {
 		c.Error(err)
 		return
@@ -122,7 +122,7 @@ func (h *DocumentHandler) Rollback(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam))
 		return
 	}
-	d, err := h.svc.Rollback(uint(id), req.VersionNo)
+	d, err := h.svc.Rollback(uint(id), middleware.GetUserID(c), middleware.GetUserRole(c), req.VersionNo)
 	if err != nil {
 		c.Error(err)
 		return
@@ -130,7 +130,7 @@ func (h *DocumentHandler) Rollback(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.OK(d))
 }
 
-// AddAnnotation handles POST /documents/:id/annotations (counselor).
+// AddAnnotation handles POST /documents/:id/annotations (counselor/admin).
 func (h *DocumentHandler) AddAnnotation(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
@@ -142,7 +142,7 @@ func (h *DocumentHandler) AddAnnotation(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam))
 		return
 	}
-	a, err := h.svc.AddAnnotation(middleware.GetUserID(c), uint(id), req.Content, req.StartOffset, req.EndOffset)
+	a, err := h.svc.AddAnnotation(middleware.GetUserID(c), uint(id), middleware.GetUserRole(c), req.Content, req.StartOffset, req.EndOffset)
 	if err != nil {
 		c.Error(err)
 		return
@@ -157,7 +157,7 @@ func (h *DocumentHandler) ListAnnotations(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, "invalid document id"))
 		return
 	}
-	items, err := h.svc.ListAnnotations(uint(id))
+	items, err := h.svc.ListAnnotations(uint(id), middleware.GetUserID(c), middleware.GetUserRole(c))
 	if err != nil {
 		c.Error(err)
 		return

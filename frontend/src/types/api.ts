@@ -76,7 +76,35 @@ export interface MaterialItem {
   status: string
   file_url: string
   uploaded_at: string
+  reviewed_by: number
+  reviewed_at: string
+  review_remark: string
   created_at: string
+}
+
+export interface MaterialBlock {
+  id: number
+  name: string
+  status: string
+}
+
+export interface BlockedAction {
+  action: string
+  reason: string
+}
+
+export interface ApplicationAbilities {
+  is_student_owner: boolean
+  is_managing_staff: boolean
+  editable: boolean
+  can_submit: boolean
+  can_return: boolean
+  can_advance: boolean
+  can_review_materials: boolean
+  can_manage_materials: boolean
+  can_edit_documents: boolean
+  missing_required_materials: MaterialBlock[]
+  blocked: BlockedAction[]
 }
 
 export interface TimelineNode {

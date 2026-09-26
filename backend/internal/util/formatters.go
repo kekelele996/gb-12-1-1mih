@@ -83,6 +83,8 @@ func MaterialStatusText(s string) string {
 		return "已上传"
 	case "approved":
 		return "已审核"
+	case "rejected":
+		return "审核不通过"
 	default:
 		return "未知"
 	}

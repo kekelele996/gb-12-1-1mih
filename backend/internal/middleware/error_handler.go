@@ -22,7 +22,11 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 		err := c.Errors.Last().Err
 		var appErr *util.AppError
 		if errors.As(err, &appErr) {
-			c.JSON(appErr.HTTPStatus, dto.Fail(appErr.Code, appErr.Message))
+			c.JSON(appErr.HTTPStatus, gin.H{
+				"code":    appErr.Code,
+				"message": appErr.Message,
+				"details": appErr.Details,
+			})
 			return
 		}
 		logger.Error("unhandled error", "error", err, "path", c.Request.URL.Path)

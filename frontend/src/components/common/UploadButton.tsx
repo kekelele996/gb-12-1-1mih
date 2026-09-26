@@ -1,8 +1,14 @@
 import { Button, Upload, message } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import axios from 'axios'
+import type { ReactNode } from 'react'
 
-export default function UploadButton({ onUploaded }: { onUploaded: (url: string) => void }) {
+interface Props {
+  onUploaded: (url: string) => void
+  children?: ReactNode
+}
+
+export default function UploadButton({ onUploaded, children }: Props) {
   return (
     <Upload
       showUploadList={false}
@@ -21,7 +27,9 @@ export default function UploadButton({ onUploaded }: { onUploaded: (url: string)
         }
       }}
     >
-      <Button icon={<UploadOutlined />}>上传附件</Button>
+      {children ?? (
+        <Button icon={<UploadOutlined />}>上传附件</Button>
+      )}
     </Upload>
   )
 }

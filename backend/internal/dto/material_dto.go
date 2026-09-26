@@ -8,7 +8,10 @@ type MaterialCreateRequest struct {
 }
 
 // MaterialStatusRequest updates item status.
+//   - student: status=uploaded + file_url
+//   - counselor/admin: status=approved/rejected (+ optional review_remark)
 type MaterialStatusRequest struct {
-	Status  string `json:"status" binding:"required"`
-	FileURL string `json:"file_url" binding:"omitempty,max=255"`
+	Status       string `json:"status" binding:"required"`
+	FileURL      string `json:"file_url" binding:"omitempty,max=255"`
+	ReviewRemark string `json:"review_remark" binding:"omitempty,max=500"`
 }

@@ -7,6 +7,7 @@ type AppError struct {
 	HTTPStatus int
 	Code       int
 	Message    string
+	Details    interface{}
 }
 
 func (e *AppError) Error() string {
@@ -16,4 +17,10 @@ func (e *AppError) Error() string {
 // NewAppError builds an AppError.
 func NewAppError(httpStatus, code int, message string) *AppError {
 	return &AppError{HTTPStatus: httpStatus, Code: code, Message: message}
+}
+
+// WithDetails attaches structured details (e.g. missing material names).
+func (e *AppError) WithDetails(details interface{}) *AppError {
+	e.Details = details
+	return e
 }

@@ -2,12 +2,12 @@ package constants
 
 // ApplicationStatus enumerates the application project state machine.
 const (
-	AppStatusPlanning  = "planning"
-	AppStatusPreparing = "preparing"
-	AppStatusSubmitted = "submitted"
-	AppStatusWaiting   = "waiting"
-	AppStatusAdmitted  = "admitted"
-	AppStatusRejected  = "rejected"
+	AppStatusPlanning   = "planning"
+	AppStatusPreparing  = "preparing"
+	AppStatusSubmitted  = "submitted"
+	AppStatusWaiting    = "waiting"
+	AppStatusAdmitted   = "admitted"
+	AppStatusRejected   = "rejected"
 	AppStatusWaitlisted = "waitlisted"
 )
 
@@ -29,7 +29,8 @@ func IsValidApplicationStatus(s string) bool {
 	return false
 }
 
-// NextApplicationStatuses returns allowed forward transitions.
+// NextApplicationStatuses returns allowed transitions along the state machine.
+// submitted -> preparing is the counselor/admin "return for revision" path.
 func NextApplicationStatuses(s string) []string {
 	switch s {
 	case AppStatusPlanning:
@@ -37,10 +38,25 @@ func NextApplicationStatuses(s string) []string {
 	case AppStatusPreparing:
 		return []string{AppStatusSubmitted}
 	case AppStatusSubmitted:
-		return []string{AppStatusWaiting}
+		return []string{AppStatusWaiting, AppStatusPreparing}
 	case AppStatusWaiting:
 		return []string{AppStatusAdmitted, AppStatusRejected, AppStatusWaitlisted}
 	default:
 		return nil
 	}
+}
+
+// EditableApplicationStatuses are the statuses in which a student may still
+// edit documents and upload materials. Once submitted, editing is locked
+// until the responsible counselor/admin returns the project to preparing.
+func EditableApplicationStatuses() map[string]bool {
+	return map[string]bool{
+		AppStatusPlanning:  true,
+		AppStatusPreparing: true,
+	}
+}
+
+// IsEditableApplicationStatus reports whether a student can edit a project.
+func IsEditableApplicationStatus(s string) bool {
+	return EditableApplicationStatuses()[s]
 }

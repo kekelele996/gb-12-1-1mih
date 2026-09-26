@@ -33,7 +33,7 @@ func (h *MaterialHandler) ListByApplication(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, "invalid application id"))
 		return
 	}
-	items, err := h.svc.ListByApplication(uint(appID))
+	items, err := h.svc.ListByApplication(uint(appID), middleware.GetUserID(c), middleware.GetUserRole(c))
 	if err != nil {
 		c.Error(err)
 		return
@@ -42,7 +42,7 @@ func (h *MaterialHandler) ListByApplication(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.OK(gin.H{"items": items, "progress": progress}))
 }
 
-// Create handles POST /applications/:appId/materials.
+// Create handles POST /applications/:appId/materials (responsible counselor/admin).
 func (h *MaterialHandler) Create(c *gin.Context) {
 	appID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
@@ -55,7 +55,7 @@ func (h *MaterialHandler) Create(c *gin.Context) {
 		return
 	}
 	m := &model.MaterialItem{Name: req.Name, Category: req.Category, IsRequired: req.IsRequired}
-	created, err := h.svc.Create(uint(appID), m)
+	created, err := h.svc.Create(uint(appID), middleware.GetUserID(c), middleware.GetUserRole(c), m)
 	if err != nil {
 		c.Error(err)
 		return
@@ -75,7 +75,7 @@ func (h *MaterialHandler) UpdateStatus(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam))
 		return
 	}
-	m, err := h.svc.UpdateStatus(middleware.GetUserID(c), uint(id), middleware.GetUserRole(c), req.Status, req.FileURL)
+	m, err := h.svc.UpdateStatus(middleware.GetUserID(c), uint(id), middleware.GetUserRole(c), req.Status, req.FileURL, req.ReviewRemark)
 	if err != nil {
 		c.Error(err)
 		return

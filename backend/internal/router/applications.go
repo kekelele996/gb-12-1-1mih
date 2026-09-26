@@ -12,6 +12,7 @@ func registerApplicationRoutes(v1 *gin.RouterGroup, cfg *config.Config, ah *hand
 	apps := v1.Group("/applications", middleware.AuthRequired(cfg))
 	apps.GET("", ah.List)
 	apps.GET("/:id", ah.Get)
+	apps.GET("/:id/abilities", ah.Abilities)
 	apps.POST("", middleware.RequireRole("student"), limiter.Limit(), ah.Create)
 	apps.PUT("/:id/status", ah.UpdateStatus)
 	apps.GET("/:id/documents", dh.ListByApplication)

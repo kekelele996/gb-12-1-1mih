@@ -129,13 +129,14 @@ gb-12-1/
 | DELETE | /api/v1/universities/:id | admin | 删除院校 |
 | GET | /api/v1/applications | 登录 | 申请项目列表 |
 | GET | /api/v1/applications/:id | 登录 | 申请项目详情 |
+| GET | /api/v1/applications/:id/abilities | 登录 | 按角色返回可操作项与阻断原因 |
 | POST | /api/v1/applications | student（限流） | 创建申请项目 |
-| PUT | /api/v1/applications/:id/status | 登录 | 申请状态流转 |
+| PUT | /api/v1/applications/:id/status | 登录 | 申请状态流转（学生提交需必交材料全部审核通过；负责顾问/管理员可退回准备中） |
 | GET | /api/v1/applications/:id/documents | 登录 | 项目文档列表 |
-| POST | /api/v1/applications/:id/documents | 登录（限流） | 创建文档（事务：文档+初始版本） |
+| POST | /api/v1/applications/:id/documents | student（限流） | 创建文档（提交后锁定，仅准备中可建） |
 | GET | /api/v1/applications/:id/materials | 登录 | 材料清单 |
-| POST | /api/v1/applications/:id/materials | 登录 | 添加材料 |
-| PUT | /api/v1/materials/:id/status | 登录 | 材料状态流转 |
+| POST | /api/v1/applications/:id/materials | counselor/admin | 添加材料（限负责顾问/管理员） |
+| PUT | /api/v1/materials/:id/status | 登录 | 材料状态流转：学生 uploaded（上传/重传）；负责顾问/管理员 approved/rejected（审核） |
 | GET | /api/v1/applications/:id/timeline | 登录 | 项目时间线 |
 | POST | /api/v1/applications/:id/timeline | 登录（限流） | 添加时间线节点 |
 | GET | /api/v1/documents/:id | 登录 | 文档详情 |
@@ -163,10 +164,17 @@ gb-12-1/
 - 后端：`internal/constants/document.go`（定义）、`internal/model/document.go`、`internal/service/document_service.go`（校验）、`internal/util/formatters.go`（DocTypeText）、`internal/constants/log_templates.go`、`database/init.sql`
 - 前端：`src/constants/document.ts`（定义）、`src/pages/ApplicationDetail.tsx`（文书入口）、`src/pages/DocumentEditor.tsx`
 
-### MaterialStatus（pending/uploaded/approved）
+### MaterialStatus（pending/uploaded/approved/rejected）
 
-- 后端：`internal/constants/material.go`（定义）、`internal/model/material_item.go`、`internal/service/material_service.go`（状态流转+进度）、`internal/util/formatters.go`、`database/init.sql`
-- 前端：`src/constants/material.ts`（定义）、`src/components/common/MaterialProgress.tsx`、`src/pages/ApplicationDetail.tsx`
+- 后端：`internal/constants/material.go`（定义+流转：学生 pending/rejected→uploaded，负责顾问/管理员 uploaded→approved/rejected）、`internal/model/material_item.go`（含 reviewed_by/reviewed_at/review_remark）、`internal/service/material_service.go`（角色权限+状态流转+进度）、`internal/util/formatters.go`、`database/init.sql`
+- 前端：`src/constants/material.ts`（定义）、`src/components/common/MaterialProgress.tsx`（上传/审核操作）、`src/pages/ApplicationDetail.tsx`
+
+### 提交闸门与编辑锁定
+
+- 学生在 preparing → submitted 时，所有必交材料必须为 approved，否则返回 409 并在 `details.missing_materials` 中给出缺失项
+- 提交后学生不能修改材料与文书；负责顾问/管理员可 submitted → preparing 退回，恢复学生编辑
+- 已审核（approved）材料学生不能再改；负责顾问/管理员可置回 uploaded 要求更换
+- 角色化能力视图：`GET /api/v1/applications/:id/abilities`，前端详情页据此显示操作项与阻断原因
 
 ### UserRole（student/counselor/admin）
 

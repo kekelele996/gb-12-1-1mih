@@ -1,8 +1,11 @@
 import request from '@/utils/request'
-import type { ApplicationProject, Document, MaterialItem, TimelineNode } from '@/types/api'
+import type { ApplicationAbilities, ApplicationProject, Document, MaterialItem, TimelineNode } from '@/types/api'
 
 export function listApplications() { return request.get<never, ApplicationProject[]>('/applications') }
 export function getApplication(id: number | string) { return request.get<never, ApplicationProject>(`/applications/${id}`) }
+export function getApplicationAbilities(id: number | string) {
+  return request.get<never, ApplicationAbilities>(`/applications/${id}/abilities`)
+}
 export function createApplication(payload: { university_id: number; major: string; round?: string }) {
   return request.post<never, ApplicationProject>('/applications', payload)
 }
@@ -19,7 +22,7 @@ export function listMaterials(appId: number) {
 export function createMaterial(appId: number, payload: { name: string; category?: string; is_required?: boolean }) {
   return request.post<never, MaterialItem>(`/applications/${appId}/materials`, payload)
 }
-export function updateMaterialStatus(id: number, payload: { status: string; file_url?: string }) {
+export function updateMaterialStatus(id: number, payload: { status: string; file_url?: string; review_remark?: string }) {
   return request.put<never, MaterialItem>(`/materials/${id}/status`, payload)
 }
 export function listTimeline(appId: number) { return request.get<never, TimelineNode[]>(`/applications/${appId}/timeline`) }

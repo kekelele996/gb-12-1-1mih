@@ -85,6 +85,9 @@ CREATE TABLE IF NOT EXISTS material_items (
   status VARCHAR(16) NOT NULL DEFAULT 'pending',
   file_url VARCHAR(255),
   uploaded_at TIMESTAMPTZ,
+  reviewed_by BIGINT DEFAULT 0,
+  reviewed_at TIMESTAMPTZ,
+  review_remark VARCHAR(500),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT fk_mat_app FOREIGN KEY (application_id) REFERENCES application_projects(id)
 );

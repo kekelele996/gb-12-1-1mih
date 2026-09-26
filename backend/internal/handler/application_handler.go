@@ -51,6 +51,26 @@ func (h *ApplicationHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.OK(a))
 }
 
+// Abilities handles GET /applications/:id/abilities (role-aware actions + block reasons).
+func (h *ApplicationHandler) Abilities(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, "invalid application id"))
+		return
+	}
+	a, err := h.svc.Get(uint(id), middleware.GetUserID(c), middleware.GetUserRole(c))
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	ab, err := h.svc.Abilities(a, middleware.GetUserID(c), middleware.GetUserRole(c))
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.OK(ab))
+}
+
 // Create handles POST /applications (student).
 func (h *ApplicationHandler) Create(c *gin.Context) {
 	var req dto.ApplicationCreateRequest
