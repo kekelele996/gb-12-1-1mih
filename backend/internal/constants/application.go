@@ -44,3 +44,13 @@ func NextApplicationStatuses(s string) []string {
 		return nil
 	}
 }
+
+// IsReturnTransition reports whether from->to is the counselor return-to-preparing transition.
+func IsReturnTransition(from, to string) bool {
+	return from == AppStatusSubmitted && to == AppStatusPreparing
+}
+
+// IsApplicationEditable reports whether materials and documents can still be modified.
+func IsApplicationEditable(s string) bool {
+	return s == AppStatusPlanning || s == AppStatusPreparing
+}

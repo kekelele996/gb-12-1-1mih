@@ -55,7 +55,7 @@ func (h *MaterialHandler) Create(c *gin.Context) {
 		return
 	}
 	m := &model.MaterialItem{Name: req.Name, Category: req.Category, IsRequired: req.IsRequired}
-	created, err := h.svc.Create(uint(appID), m)
+	created, err := h.svc.Create(middleware.GetUserID(c), middleware.GetUserRole(c), uint(appID), m)
 	if err != nil {
 		c.Error(err)
 		return

@@ -1,4 +1,4 @@
-import { Button, Card, Col, Input, Row, Select, Space, message } from 'antd'
+import { Alert, Button, Card, Col, Input, Row, Select, Space, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
@@ -9,13 +9,17 @@ import {
   rollbackDocument,
   saveDocument,
 } from '@/api/document'
+import { getApplication } from '@/api/application'
 import AnnotationList from '@/components/common/AnnotationList'
 import DocumentDiff from '@/components/common/DocumentDiff'
+import { useAuth } from '@/hooks/useAuth'
 import type { Annotation, Document, DocumentVersion } from '@/types/api'
 
 export default function DocumentEditor() {
   const { id } = useParams()
+  const { role } = useAuth()
   const [doc, setDoc] = useState<Document | null>(null)
+  const [locked, setLocked] = useState(false)
   const [content, setContent] = useState('')
   const [versions, setVersions] = useState<DocumentVersion[]>([])
   const [annotations, setAnnotations] = useState<Annotation[]>([])
@@ -28,6 +32,11 @@ export default function DocumentEditor() {
     const d = await getDocument(id!)
     setDoc(d)
     setContent(d.content)
+    // 学生：申请提交后文书锁定，只读
+    if (role === 'student') {
+      const a = await getApplication(d.application_id)
+      setLocked(a.status !== 'planning' && a.status !== 'preparing')
+    }
     setVersions(await listVersions(d.id))
     setAnnotations(await listAnnotations(d.id))
   }
@@ -58,13 +67,26 @@ export default function DocumentEditor() {
   return (
     <div>
       <h1>文书编辑：{doc.title}</h1>
+      {locked && (
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="info"
+          showIcon
+          message="申请已提交，文书已锁定为只读"
+          description="如需修改，请联系负责顾问将申请退回「材料准备中」。"
+        />
+      )}
       <Row gutter={16}>
         <Col xs={24} md={16}>
           <Card
             title={`当前版本 v${doc.current_version}`}
-            extra={<Button type="primary" onClick={save}>保存新版本</Button>}
+            extra={
+              <Button type="primary" onClick={save} disabled={locked}>
+                保存新版本
+              </Button>
+            }
           >
-            <Input.TextArea rows={16} value={content} onChange={(e) => setContent(e.target.value)} />
+            <Input.TextArea rows={16} value={content} onChange={(e) => setContent(e.target.value)} readOnly={locked} />
           </Card>
           <Card title="版本对比" style={{ marginTop: 16 }}>
             <Space>
@@ -81,7 +103,7 @@ export default function DocumentEditor() {
               />
               <Button onClick={() => setShowDiff(!showDiff)}>对比 Diff</Button>
               {compareVersion ? (
-                <Button danger onClick={() => rollback(compareVersion)}>
+                <Button danger disabled={locked} onClick={() => rollback(compareVersion)}>
                   回滚到此版本
                 </Button>
               ) : null}
@@ -99,10 +121,14 @@ export default function DocumentEditor() {
           </Card>
           <Card title="顾问批注">
             <AnnotationList annotations={annotations} />
-            <Input.TextArea rows={3} value={annContent} onChange={(e) => setAnnContent(e.target.value)} placeholder="添加批注…" style={{ marginTop: 8 }} />
-            <Button type="primary" size="small" style={{ marginTop: 8 }} onClick={submitAnnotation}>
-              添加批注
-            </Button>
+            {(role === 'counselor' || role === 'admin') && (
+              <>
+                <Input.TextArea rows={3} value={annContent} onChange={(e) => setAnnContent(e.target.value)} placeholder="添加批注…" style={{ marginTop: 8 }} />
+                <Button type="primary" size="small" style={{ marginTop: 8 }} onClick={submitAnnotation}>
+                  添加批注
+                </Button>
+              </>
+            )}
           </Card>
         </Col>
       </Row>

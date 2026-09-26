@@ -37,7 +37,7 @@ func (h *DocumentHandler) Create(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam+": "+err.Error()))
 		return
 	}
-	d, err := h.svc.Create(uint(appID), req.DocType, req.Title, req.Content)
+	d, err := h.svc.Create(middleware.GetUserID(c), middleware.GetUserRole(c), uint(appID), req.DocType, req.Title, req.Content)
 	if err != nil {
 		c.Error(err)
 		return
@@ -87,7 +87,7 @@ func (h *DocumentHandler) Save(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam))
 		return
 	}
-	d, err := h.svc.Save(uint(id), req.Content, req.ChangeSummary)
+	d, err := h.svc.Save(middleware.GetUserID(c), middleware.GetUserRole(c), uint(id), req.Content, req.ChangeSummary)
 	if err != nil {
 		c.Error(err)
 		return
@@ -122,7 +122,7 @@ func (h *DocumentHandler) Rollback(c *gin.Context) {
 		c.Error(util.NewAppError(http.StatusBadRequest, constants.CodeBadRequest, constants.MsgInvalidParam))
 		return
 	}
-	d, err := h.svc.Rollback(uint(id), req.VersionNo)
+	d, err := h.svc.Rollback(middleware.GetUserID(c), middleware.GetUserRole(c), uint(id), req.VersionNo)
 	if err != nil {
 		c.Error(err)
 		return

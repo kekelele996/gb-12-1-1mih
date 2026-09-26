@@ -28,11 +28,38 @@ func NewDocumentService(db *gorm.DB, docRepo *repository.DocumentRepository, ver
 	return &DocumentService{db: db, docRepo: docRepo, verRepo: verRepo, annRepo: annRepo, appRepo: appRepo, logger: logger}
 }
 
+// checkEditable verifies the caller may modify documents of the application.
+// Students lose write access once the application leaves planning/preparing.
+func (s *DocumentService) checkEditable(applicationID, userID uint, role string) error {
+	a, err := s.appRepo.FindByID(applicationID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return util.NewAppError(404, constants.CodeNotFound,
+				fmt.Sprintf("ApplicationProject[id=%d] not found", applicationID))
+		}
+		return fmt.Errorf("document application find: %w", err)
+	}
+	if role == constants.RoleStudent {
+		if a.StudentID != userID {
+			return util.NewAppError(403, constants.CodeForbidden,
+				fmt.Sprintf("ApplicationProject[id=%d] document change failed: not student owner", applicationID))
+		}
+		if !constants.IsApplicationEditable(a.Status) {
+			return util.NewAppError(409, constants.CodeConflict,
+				fmt.Sprintf("ApplicationProject[id=%d] document change failed: already submitted, documents locked", applicationID))
+		}
+	}
+	return nil
+}
+
 // Create creates a document under an application.
-func (s *DocumentService) Create(applicationID uint, docType, title, content string) (*model.Document, error) {
+func (s *DocumentService) Create(userID uint, role string, applicationID uint, docType, title, content string) (*model.Document, error) {
 	if !constants.IsValidDocumentType(docType) {
 		return nil, util.NewAppError(422, constants.CodeValidationError,
 			fmt.Sprintf("Document[doc_type=%s] create failed: invalid type", docType))
+	}
+	if err := s.checkEditable(applicationID, userID, role); err != nil {
+		return nil, err
 	}
 	d := &model.Document{ApplicationID: applicationID, DocType: docType, Title: title, Content: content, CurrentVersion: 1}
 	err := s.db.Transaction(func(tx *gorm.DB) error {
@@ -53,13 +80,16 @@ func (s *DocumentService) Create(applicationID uint, docType, title, content str
 }
 
 // Save saves content as a new version.
-func (s *DocumentService) Save(id uint, content, changeSummary string) (*model.Document, error) {
+func (s *DocumentService) Save(userID uint, role string, id uint, content, changeSummary string) (*model.Document, error) {
 	d, err := s.docRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, util.NewAppError(404, constants.CodeNotFound, fmt.Sprintf("Document[id=%d] not found", id))
 		}
 		return nil, fmt.Errorf("document save find: %w", err)
+	}
+	if err := s.checkEditable(d.ApplicationID, userID, role); err != nil {
+		return nil, err
 	}
 	d.Content = content
 	d.CurrentVersion++
@@ -104,7 +134,7 @@ func (s *DocumentService) ListVersions(documentID uint) ([]model.DocumentVersion
 }
 
 // Rollback restores a document to a historical version.
-func (s *DocumentService) Rollback(documentID uint, versionNo int) (*model.Document, error) {
+func (s *DocumentService) Rollback(userID uint, role string, documentID uint, versionNo int) (*model.Document, error) {
 	v, err := s.verRepo.FindByDocumentAndVersion(documentID, versionNo)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -116,6 +146,9 @@ func (s *DocumentService) Rollback(documentID uint, versionNo int) (*model.Docum
 	d, err := s.docRepo.FindByID(documentID)
 	if err != nil {
 		return nil, fmt.Errorf("document rollback doc find: %w", err)
+	}
+	if err := s.checkEditable(d.ApplicationID, userID, role); err != nil {
+		return nil, err
 	}
 	d.Content = v.Content
 	if err := s.docRepo.Update(d); err != nil {

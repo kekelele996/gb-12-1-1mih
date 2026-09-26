@@ -30,9 +30,9 @@ func Setup(cfg *config.Config, db *gorm.DB, minio *util.MinIOClient, logger *slo
 
 	userService := service.NewUserService(userRepo, logger, cfg)
 	univService := service.NewUniversityService(univRepo, logger)
-	appService := service.NewApplicationService(appRepo, univRepo, logger)
+	appService := service.NewApplicationService(appRepo, univRepo, matRepo, logger)
 	docService := service.NewDocumentService(db, docRepo, verRepo, annRepo, appRepo, logger)
-	matService := service.NewMaterialService(matRepo, logger)
+	matService := service.NewMaterialService(matRepo, appRepo, logger)
 	tlService := service.NewTimelineService(tlRepo, logger)
 	recService := service.NewRecommendationService(recRepo, univRepo, logger)
 	msgService := service.NewMessageService(msgRepo, logger)
